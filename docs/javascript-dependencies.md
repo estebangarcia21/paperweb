@@ -5,7 +5,7 @@ project's `src/main/resources/assets/js/vendor/` directory. The checked-in `jsDe
 exact version, jsDelivr path, local filename, and SHA-256 checksum for each dependency. Applications
 serve these files locally; they do not depend on a CDN at runtime.
 
-Run commands from the SquigglyMoney repository root:
+Run commands from the repository root:
 
 ```sh
 ./paperweb/scripts/jsDeps.sc add htmx
