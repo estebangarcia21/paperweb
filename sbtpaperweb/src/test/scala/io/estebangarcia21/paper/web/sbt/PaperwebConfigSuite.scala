@@ -1,0 +1,91 @@
+package io.estebangarcia21.paper.web.sbt
+
+import java.nio.charset.StandardCharsets
+import java.nio.file.{Files, Path}
+import scala.collection.JavaConverters._
+
+class PaperwebConfigSuite extends munit.FunSuite {
+
+  test("defaults remain project-local and do not invent an icon package") {
+    withProject { root =>
+      val config = load(root)
+
+      assertEquals(config.scalaPackage, None)
+      assertEquals(config.iconsOutput, None)
+      assertEquals(
+        config.assetsDirectory.toPath,
+        root.resolve("src/main/resources/assets")
+      )
+      assertEquals(config.developmentPort, 8080)
+    }
+  }
+
+  test("paperweb.conf controls generated sources, assets, and development") {
+    withProject { root =>
+      write(
+        root.resolve("paperweb.conf"),
+        """paperweb {
+          |  scala-package = "example.ui"
+          |  icons-output = "src/main/scala/example/generated/Icons.scala"
+          |  assets-directory = "src/main/resources/public"
+          |  development.port = 9191
+          |}
+          |""".stripMargin
+      )
+
+      val config = load(root)
+
+      assertEquals(config.scalaPackage, Some("example.ui"))
+      assertEquals(
+        config.iconsOutput.map(_.toPath),
+        Some(root.resolve("src/main/scala/example/generated/Icons.scala"))
+      )
+      assertEquals(
+        config.assetsDirectory.toPath,
+        root.resolve("src/main/resources/public")
+      )
+      assertEquals(config.developmentPort, 9191)
+    }
+  }
+
+  test("configured paths cannot escape the consuming project") {
+    withProject { root =>
+      write(
+        root.resolve("paperweb.conf"),
+        "paperweb.assets-directory = \"../shared\""
+      )
+
+      val result = PaperwebConfig.load(root.toFile, root.resolve("paperweb.conf").toFile)
+
+      assert(result.isLeft)
+      assert(result.left.getOrElse("").contains("must stay inside the project"))
+    }
+  }
+
+  private def load(root: Path): PaperwebConfig =
+    PaperwebConfig
+      .load(root.toFile, root.resolve("paperweb.conf").toFile)
+      .fold(fail(_), identity)
+
+  private def withProject(test: Path => Unit): Unit = {
+    val root = Files.createTempDirectory("paperweb-config-test")
+
+    try test(root)
+    finally deleteRecursively(root)
+  }
+
+  private def write(path: Path, contents: String): Unit = {
+    Files.createDirectories(path.getParent)
+    Files.write(path, contents.getBytes(StandardCharsets.UTF_8))
+    ()
+  }
+
+  private def deleteRecursively(root: Path): Unit = {
+    val paths = Files.walk(root)
+
+    try
+      paths.iterator().asScala.toVector.sortBy(_.getNameCount).reverse.foreach(Files.deleteIfExists)
+    finally paths.close()
+  }
+
+}

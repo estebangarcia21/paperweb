@@ -5,6 +5,7 @@ import org.http4s.{MediaType, Response, Status}
 import org.http4s.headers.`Content-Type`
 
 class HtmlSuiteSuite extends HtmlSuite:
+
   test("html parses an HTML response and required selects an element"):
     val response = Response[IO](Status.Ok)
       .withEntity(

@@ -1,0 +1,5 @@
+> paperweb init smoke.app
+$ exists paperweb.conf
+> paperweb doctor
+> compile
+> Test/compile

@@ -1,4 +1,4 @@
-package paperweb
+package io.estebangarcia21.paper.web
 
 import org.http4s.{Charset, EntityEncoder, MediaType}
 import org.http4s.headers.`Content-Type`

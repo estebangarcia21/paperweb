@@ -1,14 +1,40 @@
 # Icons
 
-Add a Lucide icon by running this command from the Paperweb directory:
+Icons belong to the consuming application, not to the Paperweb runtime. This keeps the library small
+and prevents one application's icon choices from becoming global API.
+
+Configure `paperweb.scala-package`, then run icon commands through sbt:
 
 ```sh
-./scripts/addIcon.sc circle-dollar-sign
+sbt "paperweb icon add circle-dollar-sign"
+sbt "paperweb icon list"
+sbt "paperweb icon remove circle-dollar-sign"
+sbt "paperweb icon sync"
 ```
 
-The script downloads the pinned Lucide SVG, makes it decorative, and adds a camel-cased method such
-as `Icons.circleDollarSign` to `src/main/scala/paperweb/Icons.scala`. It accepts one lowercase,
-kebab-case Lucide icon name and requires an internet connection.
+`add` downloads the pinned Lucide SVG, removes fixed dimensions, marks it decorative, changes the
+class to `icon`, and regenerates an application-owned `Icons.scala`. A name such as
+`circle-dollar-sign` becomes `Icons.circleDollarSign`.
 
-When updating the pinned Lucide version, review the generated markup and distribute Lucide's license
-with the application or library artifact.
+By default the generated source is:
+
+```text
+src/main/scala/<scala-package-as-directories>/Icons.scala
+```
+
+Set `paperweb.icons-output` to place it elsewhere. Paperweb owns the complete generated file; do not
+add hand-written methods to it. Put custom icons in another object.
+
+Paperweb records deterministic inputs in:
+
+```text
+.paperweb/icons.lock
+.paperweb/icons/<name>.svg
+```
+
+Commit both the generated Scala source and `.paperweb/`. `sync` validates the cache and restores a
+missing cached SVG from the exact locked Lucide version, rejecting changed content by SHA-256.
+
+Generated icons are decorative and inherit `currentColor`. Pair them with visible text or give their
+containing control an accessible name. Review Lucide's license and distribute its required notice
+with the consuming application.

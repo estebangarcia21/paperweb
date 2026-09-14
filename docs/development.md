@@ -1,36 +1,38 @@
 # Development
 
-From the Paperweb repository root, compile and test the library:
+Paperweb is one sbt build with three published modules:
+
+| sbt project | artifact | responsibility |
+| --- | --- | --- |
+| `root` | `paperweb_3` | Runtime HTML and http4s API |
+| `paperwebtestkit` | `paperwebtestkit_3` | DOM-oriented route test helpers |
+| `sbtpaperweb` | `sbt-paperweb` | Consumer setup and the `paperweb` command |
+
+Compile, format, test, and publish snapshots from the repository root:
 
 ```sh
+sbt compile
+sbt scalafmtAll scalafmtSbt
+sbt scalafmtCheckAll scalafmtSbtCheck
 sbt test
+sbt root/publishLocal paperwebtestkit/publishLocal sbtpaperweb/scripted
+sbt publishLocal
 ```
 
-When Paperweb is checked out as a submodule of an sbt application, start that application with
-automatic recompilation and restart:
+In a configured consumer, run development mode with:
 
 ```sh
-./paperweb/scripts/startDev.sc
+sbt "paperweb dev"
 ```
 
-The script locates the nearest parent sbt build outside Paperweb, frees port 8080 with `lsof`, sets
-`PAPERWEB_DEVELOPMENT=true`, and starts `sbt ~reStart`. It can be invoked from any working directory
-because paths are resolved from the script itself.
+The command reads the configured development port, asks `lsof` for a listening process on that port,
+stops it when present, and enters sbt-revolver's `~reStart` loop. It supplies the development flag
+and absolute asset source directory to the application. Paperweb then gives Ember a zero-second
+shutdown timeout and versions rendered asset URLs once per application start. Ordinary and
+production launches keep Ember's configured shutdown behavior and stable asset URLs.
 
-Application startup code passes its configured Ember builder to Paperweb:
+The plugin is the only supported CLI implementation. The old Scala CLI scripts were removed so the
+tooling cannot drift into a second implementation or require consumers to install another launcher.
 
-```scala
-import paperweb.Paperweb
-
-Paperweb.buildServer(server)
-```
-
-Paperweb keeps the environment flag private and applies a zero-second shutdown timeout when the
-development script launches the application. It also adds a server-start version query parameter to
-the global stylesheet and CSS and JavaScript declared through `Meta.assets`. Browser asset caches are
-therefore invalidated after an automatic restart while URLs remain stable between requests. Normal
-sbt runs and production launches retain the server's graceful shutdown behavior and unversioned asset
-URLs.
-
-Manage locally served JavaScript dependencies with `scripts/jsDeps.sc`. See
-[javascript-dependencies.md](javascript-dependencies.md) for its add, remove, list, and sync commands.
+`sbt publishLocal` publishes the runtime, testkit, and plugin together. A consuming build can then use
+`0.1.0-SNAPSHOT` in `project/plugins.sbt` while testing integration locally.
