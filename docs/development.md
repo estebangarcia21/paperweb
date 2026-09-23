@@ -50,9 +50,10 @@ with setup guidance if it does not. In an interactive sbt shell, Enter leaves th
 the server running; `reStop` then stops it. When sbt itself exits, its background server stops too.
 
 Hot swapping changes compiled code, but does not rerun application startup or rebuild values already
-created at startup. Restart with `reStart` after changing route assembly, configuration, migration
-behavior, or other startup state. The ordinary `paperweb dev` command remains the restart-based
-option and does not require JBR or Hotswap Agent.
+created at startup. After changing route assembly, configuration, migration behavior, or other
+startup state, leave the watch and run `paperweb dev hot` again to restart with the agent. The
+ordinary `paperweb dev` command remains the restart-based option and does not require JBR or Hotswap
+Agent.
 
 The plugin is the only supported CLI implementation. The old Scala CLI scripts were removed so the
 tooling cannot drift into a second implementation or require consumers to install another launcher.
