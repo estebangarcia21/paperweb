@@ -2,7 +2,10 @@ package io.estebangarcia21.paper.web.sbt
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
+import java.security.MessageDigest
+import java.util.HexFormat
 import java.util.concurrent.{TimeUnit, TimeoutException}
+import scala.collection.JavaConverters._
 import scala.util.Try
 import scala.util.control.NonFatal
 
@@ -111,11 +114,38 @@ private[sbt] object PaperwebTooling {
     else
       Right(
         Seq(
+          "-Dpaperweb.liveReload=true",
           "-XX:+AllowEnhancedClassRedefinition",
           "-XX:HotswapAgent=external",
           s"-javaagent:${agent.toAbsolutePath}=autoHotswap=true,disablePlugin=AnonymousClassPatch"
         )
       )
+  }
+
+  def classTreeVersion(directory: Path): String = {
+    if (!Files.isDirectory(directory)) "0"
+    else {
+      val files = Files.walk(directory)
+
+      try {
+        val digest = MessageDigest.getInstance("SHA-256")
+
+        files
+          .iterator()
+          .asScala
+          .filter(path => Files.isRegularFile(path) && path.toString.endsWith(".class"))
+          .toVector
+          .sortBy(_.toString)
+          .foreach { path =>
+            val entry =
+              s"${directory.relativize(path)}:${Files.size(path)}:${Files.getLastModifiedTime(path).to(TimeUnit.NANOSECONDS)}\n"
+
+            digest.update(entry.getBytes(StandardCharsets.UTF_8))
+          }
+
+        HexFormat.of().formatHex(digest.digest())
+      } finally files.close()
+    }
   }
 
   private def stop(process: java.lang.ProcessHandle): Unit = {

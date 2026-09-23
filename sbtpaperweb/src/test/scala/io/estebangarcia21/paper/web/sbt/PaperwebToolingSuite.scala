@@ -25,11 +25,28 @@ class PaperwebToolingSuite extends munit.FunSuite {
       assertEquals(
         options,
         Seq(
+          "-Dpaperweb.liveReload=true",
           "-XX:+AllowEnhancedClassRedefinition",
           "-XX:HotswapAgent=external",
           s"-javaagent:$agent=autoHotswap=true,disablePlugin=AnonymousClassPatch"
         )
       )
+    }
+  }
+
+  test("reload version advances only when compiled classes change") {
+    withProject { root =>
+      val classes = root.resolve("classes")
+      val source = classes.resolve("example/Page.class")
+      write(source, "first")
+
+      val initial = PaperwebTooling.classTreeVersion(classes)
+
+      assertEquals(PaperwebTooling.classTreeVersion(classes), initial)
+
+      write(source, "second")
+
+      assertNotEquals(PaperwebTooling.classTreeVersion(classes), initial)
     }
   }
 

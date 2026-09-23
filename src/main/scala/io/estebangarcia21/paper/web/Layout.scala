@@ -111,8 +111,43 @@ object Layout:
           config.globalAssets.js.map(module),
           metaData.assets.js.map(module)
         ),
-        body(content)
+        body(
+          content,
+          Option.when(Paperweb.liveReloadEnabled)(reloadScript(Paperweb.liveReloadVersion))
+        )
       )
+    )
+
+  private[web] def reloadScript(version: String): Frag =
+    script(
+      attr("data-paperweb-version") := version,
+      raw("""(() => {
+  let version = document.currentScript.dataset.paperwebVersion;
+
+  async function poll() {
+    try {
+      const response = await fetch("/_paperweb/live-reload", {
+        cache: "no-store",
+        credentials: "same-origin"
+      });
+
+      if (response.ok) {
+        const next = await response.text();
+
+        if (next !== version) {
+          window.setTimeout(() => window.location.reload(), 400);
+          return;
+        }
+      }
+    } catch (_) {
+      // Retry when the development server comes back.
+    }
+
+    window.setTimeout(poll, 1000);
+  }
+
+  window.setTimeout(poll, 1000);
+})();""")
     )
 
   private def stylesheet(path: String): Frag =

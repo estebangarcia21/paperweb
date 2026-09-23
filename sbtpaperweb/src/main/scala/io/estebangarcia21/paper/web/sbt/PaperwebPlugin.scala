@@ -20,6 +20,9 @@ object PaperwebPlugin extends AutoPlugin {
     val paperwebAddLibrary =
       settingKey[Boolean]("Whether Paperweb adds its matching runtime and testkit dependencies.")
 
+    val paperwebHotCompile =
+      taskKey[Unit]("Compile sources and publish a browser reload version when classes change.")
+
   }
 
   import autoImport._
@@ -48,8 +51,20 @@ object PaperwebPlugin extends AutoPlugin {
         // The agent reads this from the child classpath to watch sbt's freshly compiled classes.
         val configDirectory = target.value / "paperweb-hot-config"
         IO.write(configDirectory / "hotswap-agent.properties", "autoHotswap=true\n")
+        IO.write(
+          configDirectory / "reload.stamp",
+          PaperwebTooling.classTreeVersion((Compile / classDirectory).value.toPath)
+        )
 
         Seq(Attributed.blank(configDirectory))
+      },
+      paperwebHotCompile := {
+        (Compile / compile).value
+
+        val configDirectory = target.value / "paperweb-hot-config"
+        val version = PaperwebTooling.classTreeVersion((Compile / classDirectory).value.toPath)
+
+        IO.write(configDirectory / "reload.stamp", version)
       },
       reStart / envVars ++= {
         val loaded = loadConfig(baseDirectory.value, paperwebConfigFile.value)
@@ -64,7 +79,8 @@ object PaperwebPlugin extends AutoPlugin {
 
         Seq(
           "-Dpaperweb.development=true",
-          s"-Dpaperweb.assetDirectory=${loaded.assetsDirectory.getAbsolutePath}"
+          s"-Dpaperweb.assetDirectory=${loaded.assetsDirectory.getAbsolutePath}",
+          s"-Dpaperweb.reloadStampFile=${(target.value / "paperweb-hot-config" / "reload.stamp").getAbsolutePath}"
         )
       }
     )
@@ -107,7 +123,7 @@ object PaperwebPlugin extends AutoPlugin {
                     error => state.log.error(error)
                   )
 
-                  Command.process("~compile", started, error => started.log.error(error))
+                  Command.process("~paperwebHotCompile", started, error => started.log.error(error))
               }
           }
         case Right(config) =>

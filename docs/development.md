@@ -42,12 +42,21 @@ Download a [JBR 21 SDK](https://github.com/JetBrains/JetBrainsRuntime/releases) 
 [open-source Hotswap Agent JAR](https://github.com/HotswapProjects/HotswapAgent/releases). Place the
 agent at `/path/to/jbrsdk-21/lib/hotswap/hotswap-agent.jar` before starting sbt. Use the JBR **SDK**,
 because sbt needs a compiler-capable JDK. Hot mode starts the application once with enhanced class
-redefinition and Hotswap Agent's automatic class watcher, then runs sbt's `~compile` loop. Saving a
-Scala source file compiles it while the server remains running; refresh the browser to see a changed
-render body. Paperweb adds a development-only `hotswap-agent.properties` to the forked application's
-classpath to enable automatic class watching. The command checks that the agent JAR exists and fails
-with setup guidance if it does not. In an interactive sbt shell, Enter leaves the watch while keeping
-the server running; `reStop` then stops it. When sbt itself exits, its background server stops too.
+redefinition and Hotswap Agent's automatic class watcher, then watches a compile task that publishes
+a reload version after successful class compilation. Saving a Scala source file compiles it while the
+server remains running. Paperweb adds a development-only `hotswap-agent.properties` to the forked
+application's classpath to enable automatic class watching. The command checks that the agent JAR
+exists and fails with setup guidance if it does not. In an interactive sbt shell, Enter leaves the
+watch while keeping the server running; `reStop` then stops it. When sbt itself exits, its background
+server stops too.
+
+Add `Paperweb.liveReloadRoutes[IO]` to the application's HTTP routes, before a catch-all route, to
+enable browser refresh in hot mode. Paperweb then injects a small script into complete documents.
+The script polls `GET /_paperweb/live-reload` once a second and refreshes when the published class
+version or an asset source file's path, size, or modification time changes. The response uses
+`Cache-Control: no-store`. A failed Scala compile does not publish a new class version. CSS,
+JavaScript, and image edits need no sbt compile because the server checks the asset source tree at
+poll time. The script and endpoint are absent from ordinary development and production modes.
 
 Hot mode disables Hotswap Agent's `AnonymousClassPatch` plugin. Scala 3 can generate names such as
 `Page$$anon$1` that make that plugin look for a nonexistent `Page$$anon` class and log an error on

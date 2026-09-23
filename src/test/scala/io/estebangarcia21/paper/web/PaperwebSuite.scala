@@ -4,6 +4,9 @@ import org.jsoup.Jsoup
 import scalatags.Text.all._
 import scalatags.Text.tags2.{main => mainTag}
 
+import java.nio.charset.StandardCharsets
+import java.nio.file.Files
+
 class PaperwebSuite extends munit.FunSuite {
 
   test("asset version is added as a query parameter") {
@@ -77,6 +80,34 @@ class PaperwebSuite extends munit.FunSuite {
 
     assertEquals(document.select("link[rel=stylesheet]").size(), 0)
     assertEquals(document.select("link[rel=icon]").size(), 0)
+    assertEquals(document.select("script[data-paperweb-version]").size(), 0)
+  }
+
+  test("hot reload script carries the version and polls the development endpoint") {
+    val document = Jsoup.parse(Layout.reloadScript("compiled:assets").render)
+    val script = document.selectFirst("script[data-paperweb-version]")
+
+    assertEquals(script.attr("data-paperweb-version"), "compiled:assets")
+    assert(script.data().contains("/_paperweb/live-reload"))
+  }
+
+  test("asset tree version changes when a source asset changes") {
+    val directory = Files.createTempDirectory("paperweb-assets")
+    val asset = directory.resolve("page.css")
+
+    try
+      Files.writeString(asset, "body { color: red; }", StandardCharsets.UTF_8)
+
+      val initial = Paperweb.assetTreeVersion(directory)
+
+      assertEquals(Paperweb.assetTreeVersion(directory), initial)
+
+      Files.writeString(asset, "body { color: blue; }", StandardCharsets.UTF_8)
+
+      assertNotEquals(Paperweb.assetTreeVersion(directory), initial)
+    finally
+      Files.deleteIfExists(asset)
+      Files.deleteIfExists(directory)
   }
 
   test("the original paperweb namespace retains its stylesheet and favicon defaults") {
