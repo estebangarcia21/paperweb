@@ -17,6 +17,7 @@ class PaperwebConfigSuite extends munit.FunSuite {
         root.resolve("src/main/resources/assets")
       )
       assertEquals(config.developmentPort, 8080)
+      assertEquals(config.developmentAutoRefresh, true)
     }
   }
 
@@ -29,6 +30,7 @@ class PaperwebConfigSuite extends munit.FunSuite {
           |  icons-output = "src/main/scala/example/generated/Icons.scala"
           |  assets-directory = "src/main/resources/public"
           |  development.port = 9191
+          |  development.auto-refresh = false
           |}
           |""".stripMargin
       )
@@ -45,6 +47,7 @@ class PaperwebConfigSuite extends munit.FunSuite {
         root.resolve("src/main/resources/public")
       )
       assertEquals(config.developmentPort, 9191)
+      assertEquals(config.developmentAutoRefresh, false)
     }
   }
 

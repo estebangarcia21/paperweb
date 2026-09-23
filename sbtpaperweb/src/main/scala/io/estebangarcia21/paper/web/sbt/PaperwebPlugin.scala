@@ -106,7 +106,11 @@ object PaperwebPlugin extends AutoPlugin {
               Command.process("~reStart", state, error => state.log.error(error))
           }
         case Right(config) if arguments == Seq("dev", "hot") =>
-          PaperwebTooling.hotSwapJvmOptions(Paths.get(sys.props("java.home"))) match {
+          PaperwebTooling
+            .hotSwapJvmOptions(
+              Paths.get(sys.props("java.home")),
+              config.developmentAutoRefresh
+            ) match {
             case Left(error) =>
               state.log.error(error)
               state.fail
@@ -123,7 +127,10 @@ object PaperwebPlugin extends AutoPlugin {
                     error => state.log.error(error)
                   )
 
-                  Command.process("~paperwebHotCompile", started, error => started.log.error(error))
+                  val watchedTask =
+                    if (config.developmentAutoRefresh) "~paperwebHotCompile" else "~compile"
+
+                  Command.process(watchedTask, started, error => started.log.error(error))
               }
           }
         case Right(config) =>

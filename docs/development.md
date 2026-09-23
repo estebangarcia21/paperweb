@@ -57,6 +57,9 @@ version or an asset source file's path, size, or modification time changes. The 
 `Cache-Control: no-store`. A failed Scala compile does not publish a new class version. CSS,
 JavaScript, and image edits need no sbt compile because the server checks the asset source tree at
 poll time. The script and endpoint are absent from ordinary development and production modes.
+Set `paperweb.development.auto-refresh = false` in `paperweb.conf` to disable browser refresh while
+keeping JBR class hot swapping. Hot mode then watches `~compile`; refresh the browser manually after
+Scala or asset edits. Restart the hot watch after changing the setting.
 
 Hot mode disables Hotswap Agent's `AnonymousClassPatch` plugin. Scala 3 can generate names such as
 `Page$$anon$1` that make that plugin look for a nonexistent `Page$$anon` class and log an error on

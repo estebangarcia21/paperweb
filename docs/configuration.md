@@ -17,13 +17,18 @@ paperweb {
 
   development {
     port = 8080
+    auto-refresh = true
   }
 }
 ```
 
 `scala-package` is required only for icon generation. When it is present, `icons-output` defaults to
 an `Icons.scala` in that package and normally should be omitted. `assets-directory` and
-`development.port` have the values shown above by default.
+`development.port` and `development.auto-refresh` have the values shown above by default.
+`auto-refresh` controls the browser polling script and reload endpoint in `paperweb dev hot` only.
+Set it to `false` to keep class hot swapping while refreshing the browser manually. Restart the hot
+watch after changing this setting. Ordinary `paperweb dev` and production launches never inject the
+polling script.
 
 All configured paths must resolve inside the consuming project. This keeps commands scoped to the
 repository where sbt invoked them. Use project-relative paths so configuration remains portable.

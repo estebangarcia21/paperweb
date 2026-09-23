@@ -103,7 +103,7 @@ private[sbt] object PaperwebTooling {
         Left(s"Could not prepare development port $port: ${safeMessage(error)}")
     }
 
-  def hotSwapJvmOptions(javaHome: Path): Either[String, Seq[String]] = {
+  def hotSwapJvmOptions(javaHome: Path, autoRefresh: Boolean): Either[String, Seq[String]] = {
     val agent = javaHome.resolve("lib/hotswap/hotswap-agent.jar")
 
     if (!Files.isRegularFile(agent))
@@ -114,7 +114,7 @@ private[sbt] object PaperwebTooling {
     else
       Right(
         Seq(
-          "-Dpaperweb.liveReload=true",
+          s"-Dpaperweb.liveReload=$autoRefresh",
           "-XX:+AllowEnhancedClassRedefinition",
           "-XX:HotswapAgent=external",
           s"-javaagent:${agent.toAbsolutePath}=autoHotswap=true,disablePlugin=AnonymousClassPatch"
@@ -176,6 +176,7 @@ private[sbt] object PaperwebTooling {
            |
            |  development {
            |    port = 8080
+           |    auto-refresh = true
            |  }
            |}
            |""".stripMargin
@@ -203,7 +204,8 @@ private[sbt] object PaperwebTooling {
         packageState,
         iconState,
         s"assets directory: ${config.assetsDirectory.getPath}",
-        s"development port: ${config.developmentPort}"
+        s"development port: ${config.developmentPort}",
+        s"development auto-refresh: ${config.developmentAutoRefresh}"
       )
     )
   }

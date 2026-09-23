@@ -31,7 +31,7 @@ object Paperweb:
     setting("paperweb.development", "PAPERWEB_DEVELOPMENT").contains("true")
 
   private[web] def liveReloadEnabled: Boolean =
-    isDevelopment && setting("paperweb.liveReload", "PAPERWEB_LIVE_RELOAD").contains("true")
+    isDevelopment && sys.props.get("paperweb.liveReload").contains("true")
 
   private[web] def liveReloadVersion: String =
     val compiled = setting("paperweb.reloadStampFile", "PAPERWEB_RELOAD_STAMP_FILE")

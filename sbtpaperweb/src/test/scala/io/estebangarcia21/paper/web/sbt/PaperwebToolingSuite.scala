@@ -8,7 +8,7 @@ class PaperwebToolingSuite extends munit.FunSuite {
 
   test("hot development requires an installed Hotswap Agent") {
     withProject { root =>
-      val result = PaperwebTooling.hotSwapJvmOptions(root)
+      val result = PaperwebTooling.hotSwapJvmOptions(root, autoRefresh = true)
 
       assert(result.isLeft)
       assert(result.left.getOrElse("").contains("hotswap-agent.jar"))
@@ -20,7 +20,8 @@ class PaperwebToolingSuite extends munit.FunSuite {
       val agent = root.resolve("lib/hotswap/hotswap-agent.jar")
       write(agent, "agent placeholder")
 
-      val options = PaperwebTooling.hotSwapJvmOptions(root).fold(fail(_), identity)
+      val options =
+        PaperwebTooling.hotSwapJvmOptions(root, autoRefresh = true).fold(fail(_), identity)
 
       assertEquals(
         options,
@@ -31,6 +32,20 @@ class PaperwebToolingSuite extends munit.FunSuite {
           s"-javaagent:$agent=autoHotswap=true,disablePlugin=AnonymousClassPatch"
         )
       )
+    }
+  }
+
+  test("hot development can disable browser refresh without disabling class redefinition") {
+    withProject { root =>
+      val agent = root.resolve("lib/hotswap/hotswap-agent.jar")
+      write(agent, "agent placeholder")
+
+      val options =
+        PaperwebTooling.hotSwapJvmOptions(root, autoRefresh = false).fold(fail(_), identity)
+
+      assertEquals(options.head, "-Dpaperweb.liveReload=false")
+      assert(options.contains("-XX:+AllowEnhancedClassRedefinition"))
+      assert(options.exists(_.startsWith("-javaagent:")))
     }
   }
 

@@ -12,7 +12,8 @@ private[sbt] final case class PaperwebConfig(
     scalaPackage: Option[String],
     iconsOutput: Option[File],
     assetsDirectory: File,
-    developmentPort: Int
+    developmentPort: Int,
+    developmentAutoRefresh: Boolean
 )
 
 private[sbt] object PaperwebConfig {
@@ -42,6 +43,7 @@ private[sbt] object PaperwebConfig {
         .orElse(scalaPackage.map(value => s"src/main/scala/${value.replace('.', '/')}/Icons.scala"))
         .map(inside(root, _))
       val developmentPort = integer(config, "development.port", 8080)
+      val developmentAutoRefresh = boolean(config, "development.auto-refresh", true)
 
       require(
         developmentPort >= 1 && developmentPort <= 65535,
@@ -54,7 +56,8 @@ private[sbt] object PaperwebConfig {
         scalaPackage = scalaPackage,
         iconsOutput = iconsOutput,
         assetsDirectory = assetsDirectory,
-        developmentPort = developmentPort
+        developmentPort = developmentPort,
+        developmentAutoRefresh = developmentAutoRefresh
       )
     }
 
@@ -73,6 +76,9 @@ private[sbt] object PaperwebConfig {
 
   private def integer(config: Config, path: String, default: Int): Int =
     if (config.hasPath(path)) config.getInt(path) else default
+
+  private def boolean(config: Config, path: String, default: Boolean): Boolean =
+    if (config.hasPath(path)) config.getBoolean(path) else default
 
   private def inside(root: File, configured: String): File = {
     val rootPath = root.toPath.toAbsolutePath.normalize()
