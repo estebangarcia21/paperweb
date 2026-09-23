@@ -49,6 +49,11 @@ classpath to enable automatic class watching. The command checks that the agent 
 with setup guidance if it does not. In an interactive sbt shell, Enter leaves the watch while keeping
 the server running; `reStop` then stops it. When sbt itself exits, its background server stops too.
 
+Hot mode disables Hotswap Agent's `AnonymousClassPatch` plugin. Scala 3 can generate names such as
+`Page$$anon$1` that make that plugin look for a nonexistent `Page$$anon` class and log an error on
+every compilation. JBR's enhanced class redefinition and the agent's automatic watcher remain
+enabled, so edits to ScalaTags render bodies still take effect without restarting the server.
+
 Hot swapping changes compiled code, but does not rerun application startup or rebuild values already
 created at startup. After changing route assembly, configuration, migration behavior, or other
 startup state, leave the watch and run `paperweb dev hot` again to restart with the agent. The

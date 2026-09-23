@@ -113,7 +113,7 @@ private[sbt] object PaperwebTooling {
         Seq(
           "-XX:+AllowEnhancedClassRedefinition",
           "-XX:HotswapAgent=external",
-          s"-javaagent:${agent.toAbsolutePath}=autoHotswap=true"
+          s"-javaagent:${agent.toAbsolutePath}=autoHotswap=true,disablePlugin=AnonymousClassPatch"
         )
       )
   }

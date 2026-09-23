@@ -27,7 +27,7 @@ class PaperwebToolingSuite extends munit.FunSuite {
         Seq(
           "-XX:+AllowEnhancedClassRedefinition",
           "-XX:HotswapAgent=external",
-          s"-javaagent:$agent=autoHotswap=true"
+          s"-javaagent:$agent=autoHotswap=true,disablePlugin=AnonymousClassPatch"
         )
       )
     }
