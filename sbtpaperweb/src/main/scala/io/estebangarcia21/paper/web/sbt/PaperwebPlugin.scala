@@ -7,6 +7,8 @@ import spray.revolver.RevolverPlugin
 import spray.revolver.RevolverCorePlugin.autoImport._
 import spray.revolver.RevolverPlugin.autoImport._
 
+import java.nio.file.Paths
+
 /** Adds the matching Paperweb runtime and testkit and registers the `paperweb` command. */
 object PaperwebPlugin extends AutoPlugin {
 
@@ -42,6 +44,13 @@ object PaperwebPlugin extends AutoPlugin {
         else Nil
       },
       reStart / aggregate := false,
+      reStart / fullClasspath ++= {
+        // The agent reads this from the child classpath to watch sbt's freshly compiled classes.
+        val configDirectory = target.value / "paperweb-hot-config"
+        IO.write(configDirectory / "hotswap-agent.properties", "autoHotswap=true\n")
+
+        Seq(Attributed.blank(configDirectory))
+      },
       reStart / envVars ++= {
         val loaded = loadConfig(baseDirectory.value, paperwebConfigFile.value)
 
@@ -79,6 +88,27 @@ object PaperwebPlugin extends AutoPlugin {
             case Right(messages) =>
               messages.foreach(message => state.log.info(message))
               Command.process("~reStart", state, error => state.log.error(error))
+          }
+        case Right(config) if arguments == Seq("dev", "hot") =>
+          PaperwebTooling.hotSwapJvmOptions(Paths.get(sys.props("java.home"))) match {
+            case Left(error) =>
+              state.log.error(error)
+              state.fail
+            case Right(options) =>
+              PaperwebTooling.stopDevelopmentPort(config.developmentPort) match {
+                case Left(error) =>
+                  state.log.error(error)
+                  state.fail
+                case Right(messages) =>
+                  messages.foreach(message => state.log.info(message))
+                  val started = Command.process(
+                    s"reStart --- ${options.mkString(" ")}",
+                    state,
+                    error => state.log.error(error)
+                  )
+
+                  Command.process("~compile", started, error => started.log.error(error))
+              }
           }
         case Right(config) =>
           PaperwebTooling.run(arguments, config) match {

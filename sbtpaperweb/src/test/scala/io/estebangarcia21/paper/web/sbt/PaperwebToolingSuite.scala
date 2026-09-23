@@ -6,6 +6,33 @@ import scala.collection.JavaConverters._
 
 class PaperwebToolingSuite extends munit.FunSuite {
 
+  test("hot development requires an installed Hotswap Agent") {
+    withProject { root =>
+      val result = PaperwebTooling.hotSwapJvmOptions(root)
+
+      assert(result.isLeft)
+      assert(result.left.getOrElse("").contains("hotswap-agent.jar"))
+    }
+  }
+
+  test("hot development starts with enhanced redefinition and automatic class watching") {
+    withProject { root =>
+      val agent = root.resolve("lib/hotswap/hotswap-agent.jar")
+      write(agent, "agent placeholder")
+
+      val options = PaperwebTooling.hotSwapJvmOptions(root).fold(fail(_), identity)
+
+      assertEquals(
+        options,
+        Seq(
+          "-XX:+AllowEnhancedClassRedefinition",
+          "-XX:HotswapAgent=external",
+          s"-javaagent:$agent=autoHotswap=true"
+        )
+      )
+    }
+  }
+
   test("init creates the only project configuration needed by the tooling") {
     withProject { root =>
       val initial = load(root)

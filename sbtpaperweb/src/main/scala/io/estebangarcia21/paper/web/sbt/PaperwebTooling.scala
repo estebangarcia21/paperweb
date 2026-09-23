@@ -1,7 +1,7 @@
 package io.estebangarcia21.paper.web.sbt
 
 import java.nio.charset.StandardCharsets
-import java.nio.file.Files
+import java.nio.file.{Files, Path}
 import java.util.concurrent.{TimeUnit, TimeoutException}
 import scala.util.Try
 import scala.util.control.NonFatal
@@ -14,6 +14,7 @@ private[sbt] object PaperwebTooling {
     "Paperweb commands:",
     "  paperweb init <scala-package>",
     "  paperweb dev",
+    "  paperweb dev hot",
     "  paperweb doctor",
     "  paperweb icon add <lucide-name>",
     "  paperweb icon remove <lucide-name>",
@@ -98,6 +99,24 @@ private[sbt] object PaperwebTooling {
       case NonFatal(error) =>
         Left(s"Could not prepare development port $port: ${safeMessage(error)}")
     }
+
+  def hotSwapJvmOptions(javaHome: Path): Either[String, Seq[String]] = {
+    val agent = javaHome.resolve("lib/hotswap/hotswap-agent.jar")
+
+    if (!Files.isRegularFile(agent))
+      Left(
+        s"Hot development requires a JBR 21 SDK with Hotswap Agent at $agent. " +
+          "Use paperweb dev for restart-based development."
+      )
+    else
+      Right(
+        Seq(
+          "-XX:+AllowEnhancedClassRedefinition",
+          "-XX:HotswapAgent=external",
+          s"-javaagent:${agent.toAbsolutePath}=autoHotswap=true"
+        )
+      )
+  }
 
   private def stop(process: java.lang.ProcessHandle): Unit = {
     process.destroy()
